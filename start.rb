@@ -39,7 +39,7 @@ class Check
   def call
     code = [get_response(uri1).to_i, get_response(uri2).to_i].max
 
-    p "#{Time.now} status: #{code}"
+    # p "#{Time.now} status: #{code}"
 
     if @status == 200 && code != 200
       send_mail("ERROR! Status #{code}")
@@ -58,7 +58,7 @@ if ARGV.length < 3
 end
 
 pid = fork do
-  p Process.pid
+  p "process with pid #{Process.pid} started."
   check_now = Check.new(ARGV[0], ARGV[1], ARGV[2])
   loop do
     check_now.call
