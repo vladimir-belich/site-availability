@@ -63,7 +63,7 @@ pid = fork do
   loop do
     check_now.call
     Signal.trap('QUIT') { puts 'daemon site-exist is a killed!'; exit }
-    sleep 30
+    sleep 60
   end
 end
 
