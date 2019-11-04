@@ -6,7 +6,7 @@ class Check
 
   require 'net/http'
   require 'mail'
-
+  
   def initialize(*args)
     @from = args[0]
     @psw = args[1]
@@ -31,15 +31,13 @@ class Check
 
   def get_response(uri)
     response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
-      http.request(Net::HTTP::Get.new(uri.path))
+      http.request(Net::HTTP::Get.new(uri))
     end
     response.code
   end
 
   def call
     code = [get_response(uri1).to_i, get_response(uri2).to_i].max
-
-    # p "#{Time.now} status: #{code}"
 
     if @status == 200 && code != 200
       send_mail("ERROR! Status #{code}")
@@ -51,22 +49,25 @@ class Check
   end
 end
 
-if ARGV.length < 3
-  puts 'Too few arguments | недостаточно параметров'
+if ARGV.length < 3 || ARGV.length > 3
+  puts 'Check parameters!'
   puts 'Example: ruby start.rb rb@ukr.net password123 mailto@gmail.com'
   exit
 end
 
-pid = fork do
-  p "process with pid #{Process.pid} started."
-  check_now = Check.new(ARGV[0], ARGV[1], ARGV[2])
-  loop do
-    check_now.call
-    Signal.trap('QUIT') { puts 'daemon site-exist is a killed!'; exit }
-    sleep 60
-  end
-end
+$PROGRAM_NAME = 'rubydaemon'
 
-f = File.open('pid.txt', 'w')
-f.write pid
-f.close
+pid_file = File.open('pid.txt', 'w')
+
+Process.daemon
+pid = Process.pid
+
+pid_file.write pid
+pid_file.close
+
+check_now = Check.new(ARGV[0], ARGV[1], ARGV[2])
+loop do
+  check_now.call
+  Signal.trap('INT') { exit }
+  sleep 60
+end
